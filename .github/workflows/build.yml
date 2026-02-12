@@ -12,15 +12,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build with Gradle
-        # We are using a direct command here to avoid any middle-man caching plugins
-        run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleDebug --no-build-cache
+      - name: Build with System Gradle
+        # We use 'gradle' instead of './gradlew' to bypass the broken wrapper file
+        run: gradle :app:assembleDebug --no-build-cache
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: phone-detective-debug
           path: app/build/outputs/apk/debug/*.apk
-          retention-days: 1
