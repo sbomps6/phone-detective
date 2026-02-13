@@ -4,21 +4,20 @@ plugins {
 }
 
 android {
-    // Gradle 9.3 requires the '=' sign for these properties
-    namespace = "com.scott.phonedetective"
-    compileSdk = 34
+    namespace 'com.scott.phonedetective'
+    compileSdk 34
 
     defaultConfig {
-        applicationId = "com.scott.phonedetective"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        applicationId "com.scott.phonedetective"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     
     kotlinOptions {
