@@ -7,8 +7,14 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-// A simple data class to hold our findings
-data class ScanResult(val title: String, val details: String, val type: ResultType)
+// Updated Data Class: Now includes a "description" and an "isExpanded" switch
+data class ScanResult(
+    val title: String, 
+    val details: String, 
+    val description: String, // New field for the Plain English reason
+    val type: ResultType, 
+    var isExpanded: Boolean = false
+)
 
 enum class ResultType { SAFE, WARNING, DANGER }
 
@@ -18,6 +24,7 @@ class ScanAdapter(private val results: List<ScanResult>) :
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvTitle: TextView = view.findViewById(R.id.tvTitle)
         val tvDetails: TextView = view.findViewById(R.id.tvDetails)
+        val tvExplanation: TextView = view.findViewById(R.id.tvExplanation)
         val viewIndicator: View = view.findViewById(R.id.viewIndicator)
     }
 
@@ -29,17 +36,33 @@ class ScanAdapter(private val results: List<ScanResult>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = results[position]
+        
         holder.tvTitle.text = item.title
         holder.tvDetails.text = item.details
+        
+        // set the plain english text
+        holder.tvExplanation.text = item.description
 
-        // Color Coding Logic
+        // HANDLE VISIBILITY: If expanded, show the explanation. If not, hide it.
+        holder.tvExplanation.visibility = if (item.isExpanded) View.VISIBLE else View.GONE
+
+        // HANDLE CLICKS: Toggle the "isExpanded" switch when tapped
+        holder.itemView.setOnClickListener {
+            // Only allow expanding if there is actually a description to show
+            if (item.description.isNotEmpty()) {
+                item.isExpanded = !item.isExpanded
+                notifyItemChanged(position) // Refresh just this one card
+            }
+        }
+
+        // Color Coding
         when (item.type) {
             ResultType.DANGER -> {
                 holder.viewIndicator.setBackgroundColor(Color.RED)
                 holder.tvTitle.setTextColor(Color.RED)
             }
             ResultType.WARNING -> {
-                holder.viewIndicator.setBackgroundColor(Color.rgb(255, 165, 0)) // Orange
+                holder.viewIndicator.setBackgroundColor(Color.rgb(255, 140, 0)) // Orange
                 holder.tvTitle.setTextColor(Color.rgb(255, 140, 0))
             }
             ResultType.SAFE -> {
