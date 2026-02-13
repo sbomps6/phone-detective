@@ -12,19 +12,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build with System Gradle
-        # We use 'gradle' instead of './gradlew' to bypass the broken wrapper file
-        run: gradle :app:assembleDebug --no-build-cache --stacktrace
+      # This is the fix. We force the robot to install Gradle 8.5
+      # instead of using the incompatible Gradle 9.3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
+          
+      - name: Build with Gradle
+        # We use the 'gradle' command (from the setup-gradle step) 
+        # instead of your wrapper file to avoid the "manifest" error.
+        run: gradle :app:assembleDebug --stacktrace
+        
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: phone-detective-debug
           path: app/build/outputs/apk/debug/*.apk
-      - name: Upload Problems Report
-        if: always() # This ensures it runs even if the build fails
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-problems-report
-          path: |
-            build/reports/problems/
-            app/build/reports/problems/
