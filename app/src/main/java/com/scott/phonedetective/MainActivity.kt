@@ -20,61 +20,93 @@ class MainActivity : AppCompatActivity() {
         val btnScan = findViewById<Button>(R.id.btnScan)
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
 
-        // Set up the list manager
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         btnScan.setOnClickListener {
             btnScan.isEnabled = false
             btnScan.text = "Scanning..."
-
-            // Use a list to hold our findings
+            
+            // Clear previous results visually if needed, but here we just rebuild the list
             val scanFindings = ArrayList<ScanResult>()
 
             thread {
-                // 1. Check Apps
+                // --- PHASE 1: APP SCAN ---
                 val pm = packageManager
                 val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-                
-                // Add a header for apps
-                scanFindings.add(ScanResult("App Scan Started", "Checking installed applications...", ResultType.SAFE))
+                var userAppCount = 0
+                var suspiciousAppCount = 0
+
+                // Add Header
+                scanFindings.add(ScanResult("App Scan Started", "Analyzing installed applications...", ResultType.SAFE))
 
                 for (app in packages) {
+                    // Filter for User Apps (ignore system android apps)
                     if (app.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
+                        userAppCount++
                         val appName = pm.getApplicationLabel(app).toString()
-                        // Flag suspicious names
-                        if (appName.contains("Wifi", ignoreCase = true) || appName.contains("Tool", ignoreCase = true)) {
-                            scanFindings.add(ScanResult("Suspicious App Name", "$appName (${app.packageName})", ResultType.WARNING))
+                        val pkgName = app.packageName
+
+                        // THE "BAD GUY" LIST:
+                        // You can add more keywords here later!
+                        if (appName.contains("Wifi", ignoreCase = true) || 
+                            appName.contains("Tool", ignoreCase = true) ||
+                            appName.contains("Tracker", ignoreCase = true) ||
+                            appName.contains("Spy", ignoreCase = true)) {
+                            
+                            suspiciousAppCount++
+                            scanFindings.add(ScanResult("Suspicious App Found", "$appName ($pkgName)", ResultType.WARNING))
                         }
                     }
                 }
 
-                // 2. Check Logs
+                // Explicitly report the result
+                if (suspiciousAppCount == 0) {
+                    scanFindings.add(ScanResult("App Scan Complete", "Scanned $userAppCount user apps. No suspicious keywords found.", ResultType.SAFE))
+                } else {
+                    scanFindings.add(ScanResult("App Scan Warning", "Found $suspiciousAppCount potential threats out of $userAppCount apps.", ResultType.WARNING))
+                }
+
+                // --- PHASE 2: LOG SCAN ---
                 try {
-                    val process = Runtime.getRuntime().exec("logcat -d -t 200") // Increased to 200 lines
+                    // Header for Log Scan
+                    // scanFindings.add(ScanResult("Log Scan Started", "Reading system logs...", ResultType.SAFE))
+                    
+                    val process = Runtime.getRuntime().exec("logcat -d -t 300")
                     val reader = BufferedReader(InputStreamReader(process.inputStream))
                     var line: String?
+                    var logThreatsFound = 0
 
                     while (reader.readLine().also { line = it } != null) {
                         val logText = line ?: ""
                         
-                        // Filter out the noise (AppCompat)
+                        // Ignore harmless system noise
                         if (logText.contains("TaskInfo")) continue
+                        if (logText.contains("InputMethodManager")) continue
 
+                        // The "Red Flag" Keywords
                         if (logText.contains("location", ignoreCase = true)) {
-                             scanFindings.add(ScanResult("Location Accessed", logText.take(100) + "...", ResultType.DANGER))
-                        } else if (logText.contains("camera", ignoreCase = true) || logText.contains("mic", ignoreCase = true)) {
-                             scanFindings.add(ScanResult("Camera/Mic Activity", logText.take(100) + "...", ResultType.DANGER))
+                             logThreatsFound++
+                             scanFindings.add(ScanResult("Location Accessed", logText.take(120) + "...", ResultType.DANGER))
+                        } else if (logText.contains("camera", ignoreCase = true)) {
+                             logThreatsFound++
+                             scanFindings.add(ScanResult("Camera Accessed", logText.take(120) + "...", ResultType.DANGER))
+                        } else if (logText.contains("mic", ignoreCase = true) || logText.contains("record", ignoreCase = true)) {
+                             logThreatsFound++
+                             scanFindings.add(ScanResult("Microphone Activity", logText.take(120) + "...", ResultType.DANGER))
                         }
                     }
+                    
+                    if (logThreatsFound == 0) {
+                         scanFindings.add(ScanResult("System Logs Clear", "No active camera, mic, or location usage detected in recent logs.", ResultType.SAFE))
+                    }
+
                 } catch (e: Exception) {
-                    scanFindings.add(ScanResult("Error", "Could not read system logs.", ResultType.DANGER))
+                    scanFindings.add(ScanResult("Error", "Could not read system logs. Did you run the ADB command?", ResultType.DANGER))
                 }
 
-                // 3. Update UI
+                // Update UI
                 runOnUiThread {
-                    // Plug the findings into the adapter
                     recyclerView.adapter = ScanAdapter(scanFindings)
-                    
                     btnScan.text = "Scan Again"
                     btnScan.isEnabled = true
                 }
