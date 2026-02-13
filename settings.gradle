@@ -11,6 +11,13 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
+    // This part forces the versions to stay put and stops the "Mutation" error
+    components.all {
+        if (id.group == "org.jetbrains.kotlin") {
+            // Forces all Kotlin internal tools to 1.9.22
+            version { strictly("1.9.22") }
+        }
+    }
 }
 rootProject.name = "phone-detective"
 include ':app'
