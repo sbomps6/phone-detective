@@ -1,6 +1,7 @@
 package com.scott.phonedetective
 
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
@@ -29,13 +30,13 @@ class MainActivity : AppCompatActivity() {
             val scanFindings = ArrayList<ScanResult>()
 
             thread {
-                // --- PHASE 1: PERMISSION & APP SCAN ---
+                // --- PHASE 1: APP SCAN ---
                 val pm = packageManager
                 val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
                 var userAppCount = 0
                 var suspiciousAppCount = 0
 
-                scanFindings.add(ScanResult("App Scan Started", "Analyzing app permissions and behaviors...", "", ResultType.SAFE))
+                scanFindings.add(ScanResult("App Scan Started", "Analyzing ACTIVE permissions...", "", ResultType.SAFE))
 
                 for (app in packages) {
                     if (app.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
@@ -43,38 +44,43 @@ class MainActivity : AppCompatActivity() {
                         val appName = pm.getApplicationLabel(app).toString()
                         val pkgName = app.packageName
                         
-                        // 1. Get the Permissions for this app
-                        // We use a try-catch because sometimes apps hide their info
                         try {
+                            // We need both Permissions AND the Flags (to see if they are granted)
                             val packageInfo = pm.getPackageInfo(pkgName, PackageManager.GET_PERMISSIONS)
                             val requestedPermissions = packageInfo.requestedPermissions
-                            
+                            val requestedFlags = packageInfo.requestedPermissionsFlags // The "Receipts"
+
                             var hasLocation = false
                             var hasMic = false
                             var hasCamera = false
                             var hasContacts = false
-                            var riskyList = ArrayList<String>()
 
                             if (requestedPermissions != null) {
-                                for (p in requestedPermissions) {
-                                    if (p.contains("ACCESS_FINE_LOCATION")) { hasLocation = true; riskyList.add("GPS Location") }
-                                    if (p.contains("RECORD_AUDIO")) { hasMic = true; riskyList.add("Microphone") }
-                                    if (p.contains("CAMERA")) { hasCamera = true; riskyList.add("Camera") }
-                                    if (p.contains("READ_CONTACTS")) { hasContacts = true; riskyList.add("Read Contacts") }
+                                for (i in requestedPermissions.indices) {
+                                    // THE TRUTH CHECK:
+                                    // Only count it if the system says it is currently GRANTED
+                                    if ((requestedFlags[i] and PackageInfo.REQUESTED_PERMISSION_GRANTED) != 0) {
+                                        val p = requestedPermissions[i]
+                                        
+                                        if (p.contains("ACCESS_FINE_LOCATION") || p.contains("ACCESS_COARSE_LOCATION")) hasLocation = true
+                                        if (p.contains("RECORD_AUDIO")) hasMic = true
+                                        if (p.contains("CAMERA")) hasCamera = true
+                                        if (p.contains("READ_CONTACTS")) hasContacts = true
+                                    }
                                 }
                             }
 
-                            // 2. RUN THE LOGIC TRAPS
+                            // 2. RUN THE LOGIC TRAPS (Now only triggers on GRANTED permissions)
                             var reason = ""
                             var isSuspicious = false
 
                             // TRAP A: The "Over-Reaching" Flashlight
                             if (appName.contains("Flashlight", ignoreCase = true) || appName.contains("Torch", ignoreCase = true)) {
                                 if (hasLocation) {
-                                    reason = "Why is this suspicious?\nThis is a flashlight app, but it has permission to track your GPS Location. Flashlights do not need to know where you are."
+                                    reason = "Why is this suspicious?\nThis Flashlight app CURRENTLY has active access to your GPS Location. Go to Settings > Apps and turn this off immediately."
                                     isSuspicious = true
                                 } else if (hasMic) {
-                                    reason = "Why is this suspicious?\nThis flashlight app has permission to record audio. This is highly abnormal."
+                                    reason = "Why is this suspicious?\nThis Flashlight app CURRENTLY has active access to your Microphone."
                                     isSuspicious = true
                                 }
                             }
@@ -82,42 +88,33 @@ class MainActivity : AppCompatActivity() {
                             // TRAP B: The "Spying" Calculator/Game
                             else if (appName.contains("Calculator", ignoreCase = true) || appName.contains("Solitaire", ignoreCase = true)) {
                                 if (hasMic || hasContacts) {
-                                    reason = "Why is this suspicious?\nA simple tool like a Calculator should not need access to your Microphone or Contacts list."
+                                    reason = "Why is this suspicious?\nThis simple tool currently has permission to listen to you or read your contacts."
                                     isSuspicious = true
                                 }
                             }
 
-                            // TRAP C: The "Suspicious Name" (Our old logic, still good!)
+                            // TRAP C: The "Suspicious Name"
                             else if (appName.contains("Tracker", ignoreCase = true) || appName.contains("Spy", ignoreCase = true)) {
                                 reason = "Why is this suspicious?\nThe name itself suggests surveillance capabilities."
                                 isSuspicious = true
                             }
 
-                            // If we caught them in a trap, Add to list
                             if (isSuspicious) {
                                 suspiciousAppCount++
-                                scanFindings.add(ScanResult("Suspicious Behavior: $appName", "Found risky permissions.", reason, ResultType.WARNING))
-                            } 
-                            // If it's just a normal app but has LOTS of power (e.g. Facebook/TikTok), maybe just warn the user?
-                            // (Optional: You can uncomment this to see ALL apps with mic access)
-                            
-                            else if (hasMic || hasCamera) {
-                                scanFindings.add(ScanResult("High Privilege App: $appName", "Has Camera/Mic access.", 
-                                    "This app isn't necessarily malicious, but it HAS permission to use: ${riskyList.joinToString(", ")}. Verify you trust it.", ResultType.WARNING))
+                                scanFindings.add(ScanResult("Suspicious Behavior: $appName", "Active risky permissions found.", reason, ResultType.WARNING))
                             }
-                            
 
                         } catch (e: Exception) {
-                            // Sometime older Android versions fail to fetch permissions for specific system apps
+                            // Skip if info unavailable
                         }
                     }
                 }
 
                 if (suspiciousAppCount == 0) {
-                    scanFindings.add(ScanResult("App Analysis Clean", "Checked permissions for $userAppCount apps. No behavior mismatches found.", "", ResultType.SAFE))
+                    scanFindings.add(ScanResult("App Analysis Clean", "Checked $userAppCount apps. No suspicious permissions are currently active.", "", ResultType.SAFE))
                 }
 
-                // --- PHASE 2: LOG SCAN (Same as before) ---
+                // --- PHASE 2: LOG SCAN (Unchanged) ---
                 try {
                     val process = Runtime.getRuntime().exec("logcat -d -t 300")
                     val reader = BufferedReader(InputStreamReader(process.inputStream))
