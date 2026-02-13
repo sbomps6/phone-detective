@@ -11,7 +11,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
-    // This stops the "Mutation" error by forcing versions to stay put
+    // This 'strictly' block is the cure for the Mutation error
     components.all {
         if (id.group == "org.jetbrains.kotlin") {
             version { strictly("1.9.22") }
