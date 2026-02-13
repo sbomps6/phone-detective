@@ -11,12 +11,6 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
-    // This 'strictly' block is the cure for the Mutation error
-    components.all {
-        if (id.group == "org.jetbrains.kotlin") {
-            version { strictly("1.9.22") }
-        }
-    }
 }
 rootProject.name = "phone-detective"
 include ':app'
