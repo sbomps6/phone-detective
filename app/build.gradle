@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    // These now require the '=' sign in Gradle 9
+    // Gradle 9.3 requires the '=' sign for these properties
     namespace = "com.scott.phonedetective"
     compileSdk = 34
 
