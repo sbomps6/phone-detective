@@ -20,3 +20,11 @@ jobs:
         with:
           name: phone-detective-debug
           path: app/build/outputs/apk/debug/*.apk
+      - name: Upload Problems Report
+        if: always() # This ensures it runs even if the build fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-problems-report
+          path: |
+            build/reports/problems/
+            app/build/reports/problems/
