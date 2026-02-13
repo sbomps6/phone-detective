@@ -11,10 +11,9 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
-    // This part forces the versions to stay put and stops the "Mutation" error
+    // This stops the "Mutation" error by forcing versions to stay put
     components.all {
         if (id.group == "org.jetbrains.kotlin") {
-            // Forces all Kotlin internal tools to 1.9.22
             version { strictly("1.9.22") }
         }
     }
