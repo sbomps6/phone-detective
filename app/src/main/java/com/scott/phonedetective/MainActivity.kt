@@ -29,48 +29,95 @@ class MainActivity : AppCompatActivity() {
             val scanFindings = ArrayList<ScanResult>()
 
             thread {
-                // --- PHASE 1: APP SCAN ---
+                // --- PHASE 1: PERMISSION & APP SCAN ---
                 val pm = packageManager
                 val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
                 var userAppCount = 0
                 var suspiciousAppCount = 0
 
-                scanFindings.add(ScanResult("App Scan Started", "Analyzing installed applications...", "", ResultType.SAFE))
+                scanFindings.add(ScanResult("App Scan Started", "Analyzing app permissions and behaviors...", "", ResultType.SAFE))
 
                 for (app in packages) {
                     if (app.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
                         userAppCount++
                         val appName = pm.getApplicationLabel(app).toString()
                         val pkgName = app.packageName
-
-                        // SMART DETECTIVE LOGIC
-                        var reason = ""
                         
-                        if (appName.contains("Tracker", ignoreCase = true)) {
-                            reason = "Why is this flagged?\nThe name 'Tracker' suggests this app monitors location or items. While often used for finding keys (like AirTags), it can be used to track people. Verify this is yours."
-                        } else if (appName.contains("Spy", ignoreCase = true)) {
-                            reason = "Why is this flagged?\n'Spy' apps are designed for surveillance. Unless you installed this for a game, this is a major privacy risk."
-                        } else if (appName.contains("Wifi", ignoreCase = true)) {
-                            reason = "Why is this flagged?\nWi-Fi tools can analyze your network traffic. If this is a flashlight or calculator app requesting Wi-Fi access, that is highly suspicious."
-                        } else if (appName.contains("Tool", ignoreCase = true)) {
-                            reason = "Why is this flagged?\nGeneric names like 'Tool' or 'Utility' are sometimes used to hide malicious software. Check if you recognize this specific tool."
-                        }
+                        // 1. Get the Permissions for this app
+                        // We use a try-catch because sometimes apps hide their info
+                        try {
+                            val packageInfo = pm.getPackageInfo(pkgName, PackageManager.GET_PERMISSIONS)
+                            val requestedPermissions = packageInfo.requestedPermissions
+                            
+                            var hasLocation = false
+                            var hasMic = false
+                            var hasCamera = false
+                            var hasContacts = false
+                            var riskyList = ArrayList<String>()
 
-                        // If we found a reason, add it to the list
-                        if (reason.isNotEmpty()) {
-                            suspiciousAppCount++
-                            scanFindings.add(ScanResult("Suspicious App Found", "$appName ($pkgName)", reason, ResultType.WARNING))
+                            if (requestedPermissions != null) {
+                                for (p in requestedPermissions) {
+                                    if (p.contains("ACCESS_FINE_LOCATION")) { hasLocation = true; riskyList.add("GPS Location") }
+                                    if (p.contains("RECORD_AUDIO")) { hasMic = true; riskyList.add("Microphone") }
+                                    if (p.contains("CAMERA")) { hasCamera = true; riskyList.add("Camera") }
+                                    if (p.contains("READ_CONTACTS")) { hasContacts = true; riskyList.add("Read Contacts") }
+                                }
+                            }
+
+                            // 2. RUN THE LOGIC TRAPS
+                            var reason = ""
+                            var isSuspicious = false
+
+                            // TRAP A: The "Over-Reaching" Flashlight
+                            if (appName.contains("Flashlight", ignoreCase = true) || appName.contains("Torch", ignoreCase = true)) {
+                                if (hasLocation) {
+                                    reason = "Why is this suspicious?\nThis is a flashlight app, but it has permission to track your GPS Location. Flashlights do not need to know where you are."
+                                    isSuspicious = true
+                                } else if (hasMic) {
+                                    reason = "Why is this suspicious?\nThis flashlight app has permission to record audio. This is highly abnormal."
+                                    isSuspicious = true
+                                }
+                            }
+                            
+                            // TRAP B: The "Spying" Calculator/Game
+                            else if (appName.contains("Calculator", ignoreCase = true) || appName.contains("Solitaire", ignoreCase = true)) {
+                                if (hasMic || hasContacts) {
+                                    reason = "Why is this suspicious?\nA simple tool like a Calculator should not need access to your Microphone or Contacts list."
+                                    isSuspicious = true
+                                }
+                            }
+
+                            // TRAP C: The "Suspicious Name" (Our old logic, still good!)
+                            else if (appName.contains("Tracker", ignoreCase = true) || appName.contains("Spy", ignoreCase = true)) {
+                                reason = "Why is this suspicious?\nThe name itself suggests surveillance capabilities."
+                                isSuspicious = true
+                            }
+
+                            // If we caught them in a trap, Add to list
+                            if (isSuspicious) {
+                                suspiciousAppCount++
+                                scanFindings.add(ScanResult("Suspicious Behavior: $appName", "Found risky permissions.", reason, ResultType.WARNING))
+                            } 
+                            // If it's just a normal app but has LOTS of power (e.g. Facebook/TikTok), maybe just warn the user?
+                            // (Optional: You can uncomment this to see ALL apps with mic access)
+                            
+                            else if (hasMic || hasCamera) {
+                                scanFindings.add(ScanResult("High Privilege App: $appName", "Has Camera/Mic access.", 
+                                    "This app isn't necessarily malicious, but it HAS permission to use: ${riskyList.joinToString(", ")}. Verify you trust it.", ResultType.WARNING))
+                            }
+                            
+
+                        } catch (e: Exception) {
+                            // Sometime older Android versions fail to fetch permissions for specific system apps
                         }
                     }
                 }
 
                 if (suspiciousAppCount == 0) {
-                    scanFindings.add(ScanResult("App Scan Complete", "Scanned $userAppCount user apps. No suspicious keywords found.", "", ResultType.SAFE))
-                } else {
-                    scanFindings.add(ScanResult("App Scan Warning", "Found $suspiciousAppCount potential threats. Tap cards for details.", "", ResultType.WARNING))
+                    scanFindings.add(ScanResult("App Analysis Clean", "Checked permissions for $userAppCount apps. No behavior mismatches found.", "", ResultType.SAFE))
                 }
 
-                // --- PHASE 2: LOG SCAN ---
+                // --- PHASE 2: LOG SCAN (Same as before) ---
                 try {
                     val process = Runtime.getRuntime().exec("logcat -d -t 300")
                     val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -79,30 +126,29 @@ class MainActivity : AppCompatActivity() {
 
                     while (reader.readLine().also { line = it } != null) {
                         val logText = line ?: ""
-                        if (logText.contains("TaskInfo")) continue
-                        if (logText.contains("InputMethodManager")) continue
+                        if (logText.contains("TaskInfo") || logText.contains("InputMethod")) continue
 
                         if (logText.contains("location", ignoreCase = true)) {
                              logThreatsFound++
-                             scanFindings.add(ScanResult("Location Accessed", "System log indicates GPS usage.", 
-                                 "Plain English:\nAn app on your phone recently asked the GPS for your exact location. The raw log data is:\n\n$logText", ResultType.DANGER))
+                             scanFindings.add(ScanResult("Active Location Use", "GPS accessed recently.", 
+                                 "Plain English:\nSomething on your phone asked for your location just now.\n\nRaw Log: $logText", ResultType.DANGER))
                         } else if (logText.contains("camera", ignoreCase = true)) {
                              logThreatsFound++
-                             scanFindings.add(ScanResult("Camera Accessed", "System log indicates Camera usage.", 
-                                 "Plain English:\nYour camera sensor was triggered recently. If you weren't taking a photo, an app might be looking at you.\n\nRaw Data: $logText", ResultType.DANGER))
+                             scanFindings.add(ScanResult("Active Camera Use", "Camera sensor triggered.", 
+                                 "Plain English:\nYour camera was active. If you aren't taking a photo, this is suspicious.\n\nRaw Log: $logText", ResultType.DANGER))
                         } else if (logText.contains("mic", ignoreCase = true) || logText.contains("record", ignoreCase = true)) {
                              logThreatsFound++
-                             scanFindings.add(ScanResult("Microphone Activity", "System log indicates Mic usage.", 
-                                 "Plain English:\nYour microphone was active. This happens during calls or voice commands, but shouldn't happen silently.\n\nRaw Data: $logText", ResultType.DANGER))
+                             scanFindings.add(ScanResult("Active Mic Use", "Microphone triggered.", 
+                                 "Plain English:\nYour microphone was active recently.\n\nRaw Log: $logText", ResultType.DANGER))
                         }
                     }
                     
                     if (logThreatsFound == 0) {
-                         scanFindings.add(ScanResult("System Logs Clear", "No active camera, mic, or location usage detected in recent logs.", "", ResultType.SAFE))
+                         scanFindings.add(ScanResult("System Logs Clear", "No active spy activity detected in the last few minutes.", "", ResultType.SAFE))
                     }
 
                 } catch (e: Exception) {
-                    scanFindings.add(ScanResult("Error", "Could not read system logs.", "Did you run the ADB permission command?", ResultType.DANGER))
+                    scanFindings.add(ScanResult("Error", "Could not read logs.", "", ResultType.DANGER))
                 }
 
                 runOnUiThread {
