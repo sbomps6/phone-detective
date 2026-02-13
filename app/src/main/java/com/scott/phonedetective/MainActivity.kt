@@ -3,11 +3,10 @@ package com.scott.phonedetective
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
-import android.widget.ScrollView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import kotlin.concurrent.thread
@@ -19,61 +18,64 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val btnScan = findViewById<Button>(R.id.btnScan)
-        val tvLog = findViewById<TextView>(R.id.tvLog)
-        val scrollView = findViewById<ScrollView>(R.id.scrollView)
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+
+        // Set up the list manager
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
         btnScan.setOnClickListener {
-            // Disable the button so they don't click it twice
             btnScan.isEnabled = false
             btnScan.text = "Scanning..."
-            tvLog.text = "Starting Detective Scan...\n"
 
-            // Run the heavy work in a background thread
+            // Use a list to hold our findings
+            val scanFindings = ArrayList<ScanResult>()
+
             thread {
-                val results = StringBuilder()
-
-                // STEP 1: Scan Installed Apps
-                results.append("\n--- CHECKING INSTALLED APPS ---\n")
+                // 1. Check Apps
                 val pm = packageManager
                 val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                
+                // Add a header for apps
+                scanFindings.add(ScanResult("App Scan Started", "Checking installed applications...", ResultType.SAFE))
 
                 for (app in packages) {
-                    // Look for apps that are NOT system apps (User installed)
                     if (app.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
                         val appName = pm.getApplicationLabel(app).toString()
-                        results.append("Found User App: $appName (${app.packageName})\n")
+                        // Flag suspicious names
+                        if (appName.contains("Wifi", ignoreCase = true) || appName.contains("Tool", ignoreCase = true)) {
+                            scanFindings.add(ScanResult("Suspicious App Name", "$appName (${app.packageName})", ResultType.WARNING))
+                        }
                     }
                 }
 
-                // STEP 2: Check System Logs (Requires the ADB Permission)
-                results.append("\n--- CHECKING SYSTEM LOGS ---\n")
+                // 2. Check Logs
                 try {
-                    // This command grabs the last 100 lines of the system log
-                    val process = Runtime.getRuntime().exec("logcat -d -t 100")
+                    val process = Runtime.getRuntime().exec("logcat -d -t 200") // Increased to 200 lines
                     val reader = BufferedReader(InputStreamReader(process.inputStream))
                     var line: String?
 
                     while (reader.readLine().also { line = it } != null) {
-                        // Filter for "scary" keywords
-                        if (line!!.contains("location") || line!!.contains("camera") || line!!.contains("mic")) {
-                            results.append("SUSPICIOUS LOG: $line\n")
+                        val logText = line ?: ""
+                        
+                        // Filter out the noise (AppCompat)
+                        if (logText.contains("TaskInfo")) continue
+
+                        if (logText.contains("location", ignoreCase = true)) {
+                             scanFindings.add(ScanResult("Location Accessed", logText.take(100) + "...", ResultType.DANGER))
+                        } else if (logText.contains("camera", ignoreCase = true) || logText.contains("mic", ignoreCase = true)) {
+                             scanFindings.add(ScanResult("Camera/Mic Activity", logText.take(100) + "...", ResultType.DANGER))
                         }
                     }
                 } catch (e: Exception) {
-                    results.append("Error reading logs: ${e.message}\n")
-                    results.append("Did you run the ADB permission command?\n")
+                    scanFindings.add(ScanResult("Error", "Could not read system logs.", ResultType.DANGER))
                 }
 
-                // Update the UI back on the Main Thread
+                // 3. Update UI
                 runOnUiThread {
-                    tvLog.append(results.toString())
-                    tvLog.append("\n--- SCAN COMPLETE ---\n")
+                    // Plug the findings into the adapter
+                    recyclerView.adapter = ScanAdapter(scanFindings)
                     
-                    // Auto-scroll to the bottom
-                    scrollView.fullScroll(ScrollView.FOCUS_DOWN)
-                    
-                    // Re-enable the button
-                    btnScan.text = "Run Scan"
+                    btnScan.text = "Scan Again"
                     btnScan.isEnabled = true
                 }
             }
