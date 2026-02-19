@@ -9,7 +9,7 @@
         android:allowBackup="true"
         android:label="Phone Detective"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MaterialComponents.DayNight">
+        android:theme="@style/Theme.PhoneDetective">
 
         <activity
             android:name=".MainActivity"
