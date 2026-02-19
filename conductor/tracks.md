@@ -1,1 +1,5 @@
-﻿# Project Tracks`n`nThis file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.`n`n---`n`n- [x] **Track: Build the core System Information Dashboard**`n  *Link: [./tracks/sys_info_dashboard_20260219/](./tracks/sys_info_dashboard_20260219/)*
+# Project Tracks
+
+This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
+
+---
