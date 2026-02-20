@@ -1,0 +1,28 @@
+# Plan: Basic Settings Screen with Dark Mode Toggle
+
+## Phase 1: Infrastructure & Navigation
+- [ ] Task: Create `SettingsActivity` and register it in `AndroidManifest.xml`
+- [ ] Task: Add settings icon (gear icon) to `MainActivity` Top App Bar and implement navigation to `SettingsActivity`
+- [ ] Task: Conductor - User Manual Verification 'Infrastructure & Navigation' (Protocol in workflow.md)
+
+## Phase 2: Theme Management Logic
+- [ ] Task: Implement `PreferenceManager` to handle saving and retrieving theme preferences (Light, Dark, System) using SharedPreferences
+- [ ] Task: Implement `ThemeHelper` to apply the selected theme globally using `AppCompatDelegate`
+- [ ] Task: Update `MainActivity` and `SettingsActivity` to observe and apply theme changes immediately
+- [ ] Task: Conductor - User Manual Verification 'Theme Management Logic' (Protocol in workflow.md)
+
+## Phase 3: Settings UI Implementation
+- [ ] Task: Design and implement the layout for `SettingsActivity` using Material 3 components
+    - [ ] Add RadioGroup for Theme Selection (Light, Dark, System)
+    - [ ] Add placeholder for Notification Settings
+    - [ ] Add "Reset All Settings" button
+    - [ ] Add "About" section with App Version and placeholder link
+- [ ] Task: Implement "Reset All Settings" functionality with a confirmation dialog
+- [ ] Task: Bind `SettingsActivity` UI components to `PreferenceManager` and `ThemeHelper`
+- [ ] Task: Conductor - User Manual Verification 'Settings UI Implementation' (Protocol in workflow.md)
+
+## Phase 4: Finalization & Polish
+- [ ] Task: Ensure the App Version is dynamically retrieved and displayed
+- [ ] Task: Verify theme persistence across app restarts
+- [ ] Task: Final UI polish and accessibility check (touch targets, contrast)
+- [ ] Task: Conductor - User Manual Verification 'Finalization & Polish' (Protocol in workflow.md)
