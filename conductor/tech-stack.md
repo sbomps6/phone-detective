@@ -19,6 +19,13 @@
   - `androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0` (ViewModel support)
   - `androidx.lifecycle:lifecycle-livedata-ktx:2.7.0` (LiveData support)
   - `androidx.activity:activity-ktx:1.8.2` (Activity extensions)
+  - `androidx.cardview:cardview:1.0.0` (Card-based UI components)
+
+## Data Storage
+- **Preferences:** SharedPreferences for simple user settings (e.g., Theme mode).
+
+## Core Utilities
+- **Theme Management:** `ThemeHelper` for applying Material 3 theme modes (AppCompatDelegate).
 
 ## Testing
 - **Unit Testing:** JUnit 4
