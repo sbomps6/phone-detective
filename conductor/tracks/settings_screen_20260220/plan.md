@@ -11,15 +11,15 @@
 - [x] Task: Update `MainActivity` and `SettingsActivity` to observe and apply theme changes immediately
 - [x] Task: Conductor - User Manual Verification 'Theme Management Logic' (Protocol in workflow.md)
 
-## Phase 3: Settings UI Implementation
-- [ ] Task: Design and implement the layout for `SettingsActivity` using Material 3 components
-    - [ ] Add RadioGroup for Theme Selection (Light, Dark, System)
-    - [ ] Add placeholder for Notification Settings
-    - [ ] Add "Reset All Settings" button
-    - [ ] Add "About" section with App Version and placeholder link
-- [ ] Task: Implement "Reset All Settings" functionality with a confirmation dialog
-- [ ] Task: Bind `SettingsActivity` UI components to `PreferenceManager` and `ThemeHelper`
-- [ ] Task: Conductor - User Manual Verification 'Settings UI Implementation' (Protocol in workflow.md)
+## Phase 3: Settings UI Implementation [checkpoint: 07095e0]
+- [x] Task: Design and implement the layout for `SettingsActivity` using Material 3 components
+    - [x] Add RadioGroup for Theme Selection (Light, Dark, System)
+    - [x] Add placeholder for Notification Settings
+    - [x] Add "Reset All Settings" button
+    - [x] Add "About" section with App Version and placeholder link
+- [x] Task: Implement "Reset All Settings" functionality with a confirmation dialog
+- [x] Task: Bind `SettingsActivity` UI components to `PreferenceManager` and `ThemeHelper`
+- [x] Task: Conductor - User Manual Verification 'Settings UI Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Finalization & Polish
 - [ ] Task: Ensure the App Version is dynamically retrieved and displayed
