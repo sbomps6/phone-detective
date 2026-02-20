@@ -26,6 +26,8 @@
 
 ## Core Utilities
 - **Theme Management:** `ThemeHelper` for applying Material 3 theme modes (AppCompatDelegate).
+- **Notification Management:** `NotificationHelper` for channel creation, `NotificationService` for dispatching alerts.
+- **Permission Management:** `PermissionManager` for handling Android 13+ `POST_NOTIFICATIONS` flow.
 
 ## Testing
 - **Unit Testing:** JUnit 4

@@ -15,4 +15,5 @@ PhoneDetective is a comprehensive Android utility designed to empower users with
 - **Deep System Analysis:** Monitor CPU, RAM, battery health, and storage utilization.
 - **Permission Auditor:** Scan installed applications to identify those with access to sensitive data (contacts, location, microphone).
 - **Hardware Diagnostic Suite:** Interactive tests for sensors, display, and connectivity components.
+- **Real-time Security Alerts:** Receive instant notifications when suspicious app activity or risky permissions are detected during scans.
 - **User Personalization:** Customizable app settings, including Theme Selection (Light, Dark, and System-Aware modes).
