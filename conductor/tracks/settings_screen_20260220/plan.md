@@ -1,9 +1,9 @@
 # Plan: Basic Settings Screen with Dark Mode Toggle
 
-## Phase 1: Infrastructure & Navigation
-- [ ] Task: Create `SettingsActivity` and register it in `AndroidManifest.xml`
-- [ ] Task: Add settings icon (gear icon) to `MainActivity` Top App Bar and implement navigation to `SettingsActivity`
-- [ ] Task: Conductor - User Manual Verification 'Infrastructure & Navigation' (Protocol in workflow.md)
+## Phase 1: Infrastructure & Navigation [checkpoint: a2724c9]
+- [x] Task: Create `SettingsActivity` and register it in `AndroidManifest.xml`
+- [x] Task: Add settings icon (gear icon) to `MainActivity` Top App Bar and implement navigation to `SettingsActivity`
+- [x] Task: Conductor - User Manual Verification 'Infrastructure & Navigation' (Protocol in workflow.md)
 
 ## Phase 2: Theme Management Logic
 - [ ] Task: Implement `PreferenceManager` to handle saving and retrieving theme preferences (Light, Dark, System) using SharedPreferences
