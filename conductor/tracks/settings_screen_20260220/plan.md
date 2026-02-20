@@ -21,8 +21,8 @@
 - [x] Task: Bind `SettingsActivity` UI components to `PreferenceManager` and `ThemeHelper`
 - [x] Task: Conductor - User Manual Verification 'Settings UI Implementation' (Protocol in workflow.md)
 
-## Phase 4: Finalization & Polish
-- [ ] Task: Ensure the App Version is dynamically retrieved and displayed
-- [ ] Task: Verify theme persistence across app restarts
-- [ ] Task: Final UI polish and accessibility check (touch targets, contrast)
-- [ ] Task: Conductor - User Manual Verification 'Finalization & Polish' (Protocol in workflow.md)
+## Phase 4: Finalization & Polish [checkpoint: e8bff43]
+- [x] Task: Ensure the App Version is dynamically retrieved and displayed
+- [x] Task: Verify theme persistence across app restarts
+- [x] Task: Final UI polish and accessibility check (touch targets, contrast)
+- [x] Task: Conductor - User Manual Verification 'Finalization & Polish' (Protocol in workflow.md)
