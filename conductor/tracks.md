@@ -5,6 +5,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 ---
-
-- [x] **Track: Create a basic settings screen with a dark mode toggle**
-*Link: [./tracks/settings_screen_20260220/](./tracks/settings_screen_20260220/)*
